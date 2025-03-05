@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomba Cronómetro</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #cronometro {
+            font-size: 6rem;
+            margin: 20px;
+            background-color: #e74c3c;
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        #bomba-icon {
+            font-size: 5rem;
+            color: #e74c3c;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        button {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .low-time {
+            color: #f39c12 !important;
+        }
+        
+        .critical-time {
+            color: #d35400 !important;
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <i id="bomba-icon" class="material-icons">battery_charging_full</i>
+    <div id="cronometro">6</div>
+    <div>
+        <button onclick="iniciarCronometro()">Iniciar</button>
+        <button onclick="reiniciarCronometro()">Reiniciar</button>
+    </div>
+    <audio id="alarma" src="./boom.mp3"></audio>
+    <audio id="tic-tac" src="./tictac.mp3"></audio>
+
+    <script>
+        let tiempoRestante = 6;
+        const TIEMPO_TOTAL = 6;
+        let intervalo;
+        let cronometro = document.getElementById("cronometro");
+        let sonidoAlarma = document.getElementById("alarma");
+        let sonidoTicTac = document.getElementById("tic-tac");
+        let bombaIcon = document.getElementById("bomba-icon");
+
+        // Audio error handling
+        sonidoAlarma.onerror = function() {
+            console.warn("No se pudo cargar el sonido de alarma");
+        };
+        sonidoTicTac.onerror = function() {
+            console.warn("No se pudo cargar el sonido de tic-tac");
+        };
+
+        function iniciarCronometro() {
+            clearInterval(intervalo);
+            tiempoRestante = TIEMPO_TOTAL;
+            cronometro.textContent = tiempoRestante;
+            cronometro.classList.remove('low-time', 'critical-time');
+
+            intervalo = setInterval(() => {
+                if (tiempoRestante > 0) {
+                    tiempoRestante--;
+                    cronometro.textContent = tiempoRestante;
+
+                    // Only play if audio is loaded
+                    if (sonidoTicTac.readyState > 0) {
+                        sonidoTicTac.play().catch(e => console.warn("Error al reproducir tic-tac:", e));
+                    }
+
+                    if (tiempoRestante <= 2) {
+                        cronometro.classList.add('critical-time');
+                    } else if (tiempoRestante <= 3) {
+                        cronometro.classList.add('low-time');
+                    }
+                } else {
+                    clearInterval(intervalo);
+
+                    // Only play if audio is loaded
+                    if (sonidoAlarma.readyState > 0) {
+                        sonidoAlarma.play().catch(e => console.warn("Error al reproducir alarma:", e));
+                    }
+
+                    cronometro.textContent = "¡BOOM!";
+                    bombaIcon.textContent = "whatshot";
+
+                    sonidoTicTac.pause();
+                    sonidoTicTac.currentTime = 0;
+                }
+            }, 1000);
+        }
+
+        function reiniciarCronometro() {
+            clearInterval(intervalo);
+            tiempoRestante = TIEMPO_TOTAL;
+            cronometro.textContent = tiempoRestante;
+            cronometro.classList.remove('low-time', 'critical-time');
+            bombaIcon.textContent = "battery_charging_full";
+
+            // Safely pause and reset audio
+            if (sonidoTicTac.readyState > 0) {
+                sonidoTicTac.pause();
+                sonidoTicTac.currentTime = 0;
+            }
+            if (sonidoAlarma.readyState > 0) {
+                sonidoAlarma.pause();
+                sonidoAlarma.currentTime = 0;
+            }
+
+            // Automatically start the timer
+            iniciarCronometro();
+        }
+    </script>
+</body>
+
+</html>
